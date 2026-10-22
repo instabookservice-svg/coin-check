@@ -239,7 +239,7 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
   const add=(sev,t,d)=>F.push({sev,t,d}); const good=(t,d,pts)=>G.push({t,d,pts});
   const main=tok.pairs.slice().sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
   const liq=tok.liq, ageMs=tok.created<Infinity?Date.now()-tok.created:null, ageH=ageMs!=null?ageMs/36e5:null;
-  const holders=gp?+(gp.holder_count||0):null;
+  const holders=gp&&+gp.holder_count>0?+gp.holder_count:null;
   const onCex=gp?.is_in_cex?.listed==='1'; const cexList=gp?.is_in_cex?.cex_list||[];
   const big = onCex || liq>5e6;   // established: lowers severity of admin switches
 
@@ -283,8 +283,8 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
     if(gp.is_mintable==='1') add(ownerActive&&!big?'high':'low','More coins can be minted',ownerActive?'The owner can print new tokens whenever they want and dump them, diluting everyone else.':'A mint function exists but ownership looks renounced.');
     if(gp.is_open_source==='0') add('high','Contract code is hidden','The code isn\'t published, so nobody can check what it really does. Legit projects publish their code.');
     if(gp.is_proxy==='1') add(big?'low':'medium','Contract can be upgraded','It\'s a proxy contract, so the team can swap in new code later, including malicious code.');
-    if(gp.transfer_pausable==='1') add(ownerActive&&!big?'medium':'low','Trading can be paused','The owner can freeze all transfers, which would stop everyone from selling.');
-    if(gp.is_blacklisted==='1') add(ownerActive&&!big?'medium':'low','Owner can blacklist wallets','Specific wallets can be blocked from trading.');
+    if(gp.transfer_pausable==='1') add(ownerActive&&!big?'medium':'low','Trading can be paused',ownerActive?'The owner can freeze all transfers, which would stop everyone from selling.':'The contract has a pause switch, but ownership looks renounced, so no one should be able to use it.');
+    if(gp.is_blacklisted==='1') add(ownerActive&&!big?'medium':'low','Owner can blacklist wallets',ownerActive?'Specific wallets can be blocked from trading.':'A blacklist function exists, but ownership looks renounced.');
     if(gp.trading_cooldown==='1') add('low','Trading cooldown','There\'s a forced wait between trades.');
     if(gp.anti_whale_modifiable==='1') add('low','Max-buy limits can be changed','The owner can change how much one wallet can buy or hold.');
     if(gp.external_call==='1') add('low','Calls other contracts','The contract depends on outside code, which adds risk.');
@@ -335,9 +335,13 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
   if(holders>10000) good('Lots of holders',`${fmtNum(holders)} wallets hold it.`,6);
   else if(holders!=null && holders<100 && tok.pairs.length) add('medium',`Only ${fmtNum(holders)} holders`,'Very few wallets hold this coin, so a handful of people control the price.');
 
-  const W={critical:45,high:20,medium:9,low:3};
-  let s=F.reduce((a,f)=>a+W[f.sev],0) - G.reduce((a,g)=>a+g.pts,0);
+  const W={critical:45,high:22,medium:9,low:3};
+  const isNew=ageH!=null&&ageH<24*7;
+  let s=F.reduce((a,f)=>a+W[f.sev],0) - G.reduce((a,g)=>a+(isNew&&!onCex?g.pts/2:g.pts),0);
   s=Math.max(0,Math.min(100,Math.round(s)));
+  if(tok.pairs.length && liq<5000) s=Math.max(s,60);
+  else if(ageH!=null && ageH<24 && liq<50000) s=Math.max(s,55);
+  else if(isNew && liq<50000) s=Math.max(s,45);
   if(F.some(f=>f.sev==='critical')) s=Math.max(s,88);
   const order={critical:0,high:1,medium:2,low:3}; F.sort((a,b)=>order[a.sev]-order[b.sev]);
   let v; if(s>=75)v={k:'Danger',c:'var(--r)'}; else if(s>=50)v={k:'High risk',c:'var(--o)'}; else if(s>=25)v={k:'Caution',c:'var(--y)'}; else v={k:'Lower risk',c:'var(--g)'};
