@@ -255,7 +255,7 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
     }
     const ch=main?.priceChange?.h24; if(ch!=null && ch<-60) add('medium','Price crashed in the last 24 hours',`Down ${Math.abs(ch).toFixed(0)}% today. That's a common sign of insiders dumping or a rug pull in progress.`);
     const tx=main?.txns?.h24; if(tx && tx.sells>30 && tx.sells>tx.buys*3) add('low','Heavy selling',`${fmtNum(tx.sells)} sells vs ${fmtNum(tx.buys)} buys in 24 hours.`);
-    const info=main?.info; if(!info || (!(info.websites||[]).length && !(info.socials||[]).length)) add('medium','No website or socials listed','Legit projects almost always list a website, X/Twitter or Telegram. Anonymous coins with nothing are higher risk.');
+    const info=main?.info; if(!big && ageH!=null && ageH<24*365) if(!info || (!(info.websites||[]).length && !(info.socials||[]).length)) add('medium','No website or socials listed','Legit projects almost always list a website, X/Twitter or Telegram. Anonymous coins with nothing are higher risk.');
     const fdv=main?.fdv||main?.marketCap; if(fdv>1e6 && liq>0 && fdv/liq>150 && !big) add('low','Valuation is huge compared to liquidity',`Valued at ${fmtUsd(fdv)} but only ${fmtUsd(liq)} is actually tradeable. That price is easy to fake and hard to cash out of.`);
   }
 
