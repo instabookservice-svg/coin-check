@@ -120,7 +120,7 @@ footer strong{color:var(--fg)}
   <div class="chips"><small>Try:</small>
     <button class="chip" data-q="0x6982508145454Ce325dDbE47a25d4ec3d2311933">PEPE</button>
     <button class="chip" data-q="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263">BONK</button>
-    <button class="chip" data-q="dogwifhat">WIF</button>
+    <button class="chip" data-q="EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm">WIF</button>
     <button class="chip rand" id="rand" type="button">🎲 Random brand-new coin</button>
   </div>
 </section>
@@ -316,9 +316,9 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
     holderFlags((gp.holders||[]).filter(h=>!pool.has(h.account)&&!pool.has(h.token_account)&&h.is_locked!==1&&!/raydium|orca|meteora|pump|pool|lock|burn/i.test(h.tag||'')).map(h=>+h.percent||0),add,big);
   }
   if(rc){
-    (rc.risks||[]).forEach(r=>{ if(/mutable metadata|freeze authority|mint authority/i.test(r.name)) return;
+    (rc.risks||[]).forEach(r=>{ if(/mutable metadata|freeze authority|mint authority|liquidity|holder|ownership|\bLP\b/i.test(r.name)) return;
       if(r.level==='danger') add('high',r.name,r.description||'Flagged as dangerous by RugCheck.'); });
-    if(rc.lpLockedPct!=null && !big && !(ageH>24*180)){ if(rc.lpLockedPct<50) add(liq<1e6?'high':'medium',`Only ${rc.lpLockedPct.toFixed(0)}% of liquidity is locked`,'The pool can be pulled. That\'s a rug pull, and the price goes to zero.'); else if(rc.lpLockedPct>90) good('Liquidity locked',`${rc.lpLockedPct.toFixed(0)}% of liquidity is locked or burned.`,5); }
+    if(rc.lpLockedPct!=null && !big && !(ageH>24*180) && !/pump/i.test(main?.dexId||'')){ if(rc.lpLockedPct<50) add(liq<1e6?'high':'medium',`Only ${rc.lpLockedPct.toFixed(0)}% of liquidity is locked`,'The pool can be pulled. That\'s a rug pull, and the price goes to zero.'); else if(rc.lpLockedPct>90) good('Liquidity locked',`${rc.lpLockedPct.toFixed(0)}% of liquidity is locked or burned.`,5); }
   }
   if(hp){
     if(hp.honeypotResult?.isHoneypot && !F.some(f=>/Honeypot/.test(f.t))) add('critical','Honeypot (failed sell test)',hp.honeypotResult.honeypotReason||'A simulated sell failed. Buyers likely can\'t sell.');
