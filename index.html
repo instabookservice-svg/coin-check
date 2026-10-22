@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Coin Check by Scam Radar</title>
+<meta name="description" content="Paste any crypto coin's contract address or ticker and get an instant scam-risk report in plain English: honeypots, hidden taxes, mint switches, whale wallets, unlocked liquidity.">
+<meta property="og:title" content="Coin Check by Scam Radar: is this coin a scam?">
+<meta property="og:description" content="Instant scam-risk report for any token. Free.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column "case file" — search on top, verdict dial + stats, then the evidence list. Single dark look (brand). */
+:root{
+  --bg:#080c0b; --panel:#0f1614; --panel2:#131c19; --line:#20302a; --fg:#eef3f0; --mut:#8e9a95;
+  --g:#34e0a1; --y:#f5c451; --o:#ff8a3d; --r:#ff4d5e;
+  --display:'Archivo',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--display);-webkit-font-smoothing:antialiased}
+body{background:radial-gradient(ellipse 70% 40% at 50% -5%,rgba(52,224,161,.13),transparent 70%),var(--bg);min-height:100vh}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--g)}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.14em;font-size:15px}
+.brand .tag{border:2px solid var(--g);color:var(--g);border-radius:6px;padding:2px 8px;font-size:12px;letter-spacing:.12em}
+header a.yt{font-size:13px;color:var(--mut);text-decoration:none;font-weight:700}
+header a.yt:hover{color:var(--fg)}
+.hero{margin-top:46px}
+h1{font-size:clamp(34px,6vw,58px);line-height:1.02;letter-spacing:-.025em;margin:0;font-weight:900;text-wrap:balance}
+h1 span{color:var(--g)}
+.sub{color:var(--mut);font-size:17px;line-height:1.5;margin:14px 0 0;max-width:62ch}
+form{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap}
+#q{flex:1 1 380px;min-width:0;background:var(--panel);border:1.5px solid var(--line);color:var(--fg);border-radius:12px;padding:17px 18px;font:500 16px var(--mono)}
+#q:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 4px rgba(52,224,161,.15)}
+button{font-family:var(--display);cursor:pointer}
+.go{background:var(--g);color:#04130d;border:0;border-radius:12px;padding:0 28px;font-weight:900;font-size:16px;min-height:56px}
+.go:hover{filter:brightness(1.08)} .go:disabled{opacity:.6;cursor:wait}
+.go:focus-visible,.chip:focus-visible,.pick:focus-visible,.ghost:focus-visible{outline:3px solid var(--y);outline-offset:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.chips small{color:var(--mut);font-size:13px;margin-right:4px}
+.chip{background:transparent;border:1.5px solid var(--line);color:var(--fg);border-radius:999px;padding:7px 13px;font-weight:700;font-size:13px}
+.chip:hover{border-color:var(--g)}
+.chip.rand{border-color:rgba(245,196,81,.5);color:var(--y)}
+#status{margin-top:26px;color:var(--mut);font:14px var(--mono);min-height:20px}
+#status.err{color:var(--r)}
+/* picker */
+.picker{margin-top:18px;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;overflow:hidden}
+.picker .ph{padding:14px 18px;border-bottom:1px solid var(--line);font-weight:800;font-size:15px}
+.picker .ph em{font-style:normal;color:var(--y)}
+.pick{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--fg);padding:13px 18px}
+.pick:last-child{border-bottom:0}
+.pick:hover{background:var(--panel2)}
+.pick .nm{font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick .nm small{display:block;color:var(--mut);font:12px var(--mono);margin-top:3px;overflow:hidden;text-overflow:ellipsis}
+.pick .mt{font:13px var(--mono);color:var(--mut);text-align:right;white-space:nowrap}
+.pill{font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;border-radius:6px;padding:3px 7px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+/* report */
+#report{margin-top:26px}
+.ex{font:600 12px var(--mono);letter-spacing:.12em;color:var(--y);margin-bottom:10px}
+.top{display:grid;grid-template-columns:300px 1fr;gap:18px}
+@media (max-width:760px){.top{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1.5px solid var(--line);border-radius:18px;padding:22px;min-width:0}
+.dialbox{display:flex;flex-direction:column;align-items:center;text-align:center}
+.tok{font-weight:900;font-size:22px;letter-spacing:-.01em;max-width:100%;overflow-wrap:anywhere}
+.tok small{display:block;font:12px var(--mono);color:var(--mut);margin-top:6px;overflow-wrap:anywhere;font-weight:400}
+.dial{position:relative;width:200px;height:120px;margin-top:16px}
+.dial svg{width:200px;height:120px;display:block}
+.dial .num{position:absolute;left:0;right:0;bottom:2px;font-weight:900;font-size:46px;letter-spacing:-.03em}
+.dial .num small{font-size:15px;color:var(--mut);font-weight:700}
+.verdict{margin-top:10px;font-weight:900;font-size:20px;letter-spacing:.06em;text-transform:uppercase}
+.sumline{color:var(--mut);font-size:14px;line-height:1.5;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-radius:14px;overflow:hidden;border:1.5px solid var(--line)}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--panel);padding:14px 16px;min-width:0}
+.stat .k{font:600 11px var(--mono);letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+.stat .v{font-weight:800;font-size:19px;margin-top:6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stat .v.up{color:var(--g)} .stat .v.dn{color:var(--r)}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.ghost{background:transparent;border:1.5px solid var(--line);color:var(--fg);border-radius:10px;padding:9px 13px;font-weight:700;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.ghost:hover{border-color:var(--g)}
+h2{font-size:22px;letter-spacing:-.01em;margin:30px 0 12px;font-weight:900;display:flex;align-items:center;gap:10px}
+h2 .cnt{font:600 13px var(--mono);color:var(--mut)}
+.flags{display:flex;flex-direction:column;gap:10px}
+.flag{display:grid;grid-template-columns:92px 1fr;gap:14px;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:15px 16px;align-items:start}
+@media (max-width:520px){.flag{grid-template-columns:1fr;gap:8px}}
+.sev{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:6px;padding:5px 8px;text-align:center;justify-self:start}
+.sev.critical{background:rgba(255,77,94,.16);color:var(--r);border:1px solid rgba(255,77,94,.5)}
+.sev.high{background:rgba(255,138,61,.14);color:var(--o);border:1px solid rgba(255,138,61,.45)}
+.sev.medium{background:rgba(245,196,81,.12);color:var(--y);border:1px solid rgba(245,196,81,.4)}
+.sev.low{background:rgba(142,154,149,.1);color:var(--mut);border:1px solid var(--line)}
+.sev.good{background:rgba(52,224,161,.12);color:var(--g);border:1px solid rgba(52,224,161,.4)}
+.flag .t{font-weight:800;font-size:16px}
+.flag .d{color:var(--mut);font-size:14px;line-height:1.5;margin-top:4px;max-width:70ch}
+.none{color:var(--mut);font-size:14px;background:var(--panel);border:1.5px dashed var(--line);border-radius:14px;padding:16px}
+.checked{margin-top:26px;color:var(--mut);font:12.5px/1.7 var(--mono)}
+.checked b{color:var(--fg);font-weight:600}
+footer{margin-top:50px;border-top:1px solid var(--line);padding-top:20px;color:var(--mut);font-size:13px;line-height:1.6}
+footer strong{color:var(--fg)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--g);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-1px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="none" stroke="#34e0a1" stroke-width="3.5"/><circle cx="22" cy="22" r="10" fill="none" stroke="#34e0a1" stroke-width="3" opacity=".6"/><line x1="22" y1="22" x2="35" y2="10" stroke="#34e0a1" stroke-width="3.5" stroke-linecap="round"/><circle cx="22" cy="22" r="3.2" fill="#34e0a1"/></svg>SCAM RADAR <span class="tag">COIN CHECK</span></div>
+  <a class="yt" href="https://www.youtube.com/channel/UCPhtLqe57kr680GvnZ-qUfg" target="_blank" rel="noopener">Watch Scam Radar on YouTube ↗</a>
+</header>
+
+<section class="hero">
+  <h1>Is this coin <span>a scam?</span></h1>
+  <p class="sub">Paste a contract address, a ticker or a DexScreener link. In a few seconds you get a risk score and every red flag explained in plain English: honeypots, hidden taxes, mint switches, whale wallets and unlocked liquidity.</p>
+  <form id="f" autocomplete="off">
+    <input id="q" aria-label="Contract address, ticker or DexScreener link" placeholder="0x… address, Solana mint, $TICKER or dexscreener.com link">
+    <button class="go" id="go" type="submit">Check coin</button>
+  </form>
+  <div class="chips"><small>Try:</small>
+    <button class="chip" data-q="0x6982508145454Ce325dDbE47a25d4ec3d2311933">PEPE</button>
+    <button class="chip" data-q="DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263">BONK</button>
+    <button class="chip" data-q="dogwifhat">WIF</button>
+    <button class="chip rand" id="rand" type="button">🎲 Random brand-new coin</button>
+  </div>
+</section>
+
+<div id="status" role="status" aria-live="polite"></div>
+<div id="picker"></div>
+<div id="report"></div>
+
+<footer>
+  <strong>Not financial advice.</strong> Coin Check runs automated checks on public on-chain and market data from DexScreener, GoPlus Security, Honeypot.is and RugCheck. A low score does not mean a coin is safe or a good investment, and scammers invent new tricks all the time. Never invest money you can't afford to lose.
+</footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const CHAIN={ethereum:{gp:'1',hp:1,name:'Ethereum',ex:'https://etherscan.io/token/'},bsc:{gp:'56',hp:56,name:'BNB Chain',ex:'https://bscscan.com/token/'},base:{gp:'8453',hp:8453,name:'Base',ex:'https://basescan.org/token/'},arbitrum:{gp:'42161',name:'Arbitrum',ex:'https://arbiscan.io/token/'},polygon:{gp:'137',name:'Polygon',ex:'https://polygonscan.com/token/'},optimism:{gp:'10',name:'Optimism',ex:'https://optimistic.etherscan.io/token/'},avalanche:{gp:'43114',name:'Avalanche',ex:'https://snowtrace.io/token/'},linea:{gp:'59144',name:'Linea'},blast:{gp:'81457',name:'Blast'},sonic:{gp:'146',name:'Sonic'},solana:{gp:'solana',name:'Solana',ex:'https://solscan.io/token/'}};
+const chainName=c=>CHAIN[c]?.name||c;
+const DEAD=['0x0000000000000000000000000000000000000000','0x000000000000000000000000000000000000dead','0xdead000000000000000042069420694206942069'];
+
+async function getJSON(url,ms=12000){
+  const c=new AbortController(); const t=setTimeout(()=>c.abort(),ms);
+  try{const r=await fetch(url,{signal:c.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json();}
+  finally{clearTimeout(t)}
+}
+const fmtUsd=n=>{if(n==null||isNaN(n))return '—'; n=+n; const a=Math.abs(n);
+  if(a>=1e9)return '$'+(n/1e9).toFixed(2)+'B'; if(a>=1e6)return '$'+(n/1e6).toFixed(2)+'M'; if(a>=1e3)return '$'+(n/1e3).toFixed(1)+'K';
+  if(a>=1)return '$'+n.toFixed(2); if(a===0)return '$0'; const d=Math.min(12,Math.max(2,-Math.floor(Math.log10(a))+3)); return '$'+n.toFixed(d);};
+const fmtNum=n=>n==null||isNaN(n)?'—':Number(n).toLocaleString('en-US');
+const fmtAge=ms=>{if(!ms)return '—'; const h=(Date.now()-ms)/36e5; if(h<1)return Math.max(1,Math.round(h*60))+' min'; if(h<48)return Math.round(h)+' hours'; const d=h/24; if(d<60)return Math.round(d)+' days'; if(d<730)return Math.round(d/30.4)+' months'; return (d/365).toFixed(1)+' years';};
+const pct=x=>(x*100).toFixed(x*100<10?1:0)+'%';
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function status(msg,err){const s=$('#status'); s.className=err?'err':''; s.innerHTML=msg?(err?'':'<span class="spin"></span>')+esc(msg):'';}
+
+/* ---------- input → token ---------- */
+function parseInput(raw){
+  const s=raw.trim();
+  const m=s.match(/dexscreener\.com\/([a-z0-9]+)\/([A-Za-z0-9]+)/i);
+  if(m) return {kind:'dexlink',chain:m[1].toLowerCase(),addr:m[2]};
+  if(/^0x[a-fA-F0-9]{40}$/.test(s)) return {kind:'addr',addr:s};
+  if(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s)) return {kind:'addr',addr:s};
+  return {kind:'search',q:s.replace(/^\$/,'')};
+}
+async function pairsForToken(addr){
+  const j=await getJSON('https://api.dexscreener.com/latest/dex/tokens/'+addr);
+  return (j.pairs||[]).filter(p=>p.baseToken?.address?.toLowerCase()===addr.toLowerCase());
+}
+function groupTokens(pairs){
+  const map=new Map();
+  for(const p of pairs){const k=p.chainId+':'+p.baseToken.address.toLowerCase(); const g=map.get(k)||{chain:p.chainId,addr:p.baseToken.address,name:p.baseToken.name,symbol:p.baseToken.symbol,liq:0,created:Infinity,mcap:p.marketCap||p.fdv||0,pairs:[]};
+    g.liq+=p.liquidity?.usd||0; if(p.pairCreatedAt)g.created=Math.min(g.created,p.pairCreatedAt); g.mcap=Math.max(g.mcap,p.marketCap||p.fdv||0); g.pairs.push(p); map.set(k,g);}
+  return [...map.values()].sort((a,b)=>b.liq-a.liq);
+}
+
+async function run(raw,opts={}){
+  if(!raw.trim())return;
+  $('#go').disabled=true; $('#picker').innerHTML=''; if(!opts.keepReport) $('#report').innerHTML='';
+  try{
+    const inp=parseInput(raw);
+    let groups;
+    if(inp.kind==='search'){
+      status('Searching for "'+inp.q+'"…');
+      const j=await getJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(inp.q));
+      const qq=inp.q.toLowerCase();
+      const pairs=(j.pairs||[]).filter(p=>p.baseToken && (p.baseToken.symbol.toLowerCase()===qq||p.baseToken.name.toLowerCase().includes(qq)));
+      groups=groupTokens(pairs.length?pairs:(j.pairs||[]));
+      if(!groups.length){status('No coins found for "'+inp.q+'". Try pasting the contract address instead.',true);return;}
+      if(groups.length>1 && !opts.autoPick){status('');showPicker(groups,inp.q);return;}
+      return analyze(groups[0],opts);
+    }
+    status('Finding trading pairs…');
+    let pairs=await pairsForToken(inp.addr);
+    if(!pairs.length && inp.kind==='dexlink'){
+      const j=await getJSON(`https://api.dexscreener.com/latest/dex/pairs/${inp.chain}/${inp.addr}`);
+      pairs=(j.pairs||[]);
+    }
+    groups=groupTokens(pairs);
+    if(!groups.length){
+      const isSol=!inp.addr.startsWith('0x');
+      return analyze({chain:isSol?'solana':'ethereum',addr:inp.addr,name:'Unknown token',symbol:'?',liq:0,created:Infinity,mcap:0,pairs:[]},opts);
+    }
+    return analyze(groups[0],opts);
+  }catch(e){status('Something went wrong reaching the data sources ('+e.message+'). Check your connection and try again.',true);}
+  finally{$('#go').disabled=false;}
+}
+
+function showPicker(groups,q){
+  const top=groups.slice(0,8);
+  $('#picker').innerHTML=`<div class="picker"><div class="ph">${groups.length} coins use the name <em>${esc(q)}</em>. Copycats are common, so pick by chain and liquidity.</div>`+
+    top.map((g,i)=>`<button class="pick" data-i="${i}"><span class="nm">${esc(g.name)} <span style="color:var(--mut)">$${esc(g.symbol)}</span><small>${esc(g.addr)}</small></span><span class="pill">${esc(chainName(g.chain))}</span><span class="mt">liq ${fmtUsd(g.liq)}<br>${g.created<Infinity?fmtAge(g.created)+' old':''}</span></button>`).join('')+'</div>';
+  $('#picker').querySelectorAll('.pick').forEach(b=>b.onclick=()=>{$('#picker').innerHTML='';analyze(top[+b.dataset.i]);});
+}
+
+/* ---------- analysis ---------- */
+async function analyze(tok,opts={}){
+  $('#go').disabled=true;
+  status(`Running security checks on ${tok.symbol!=='?'?'$'+tok.symbol:'token'} (${chainName(tok.chain)})…`);
+  const isSol=tok.chain==='solana';
+  const c=CHAIN[tok.chain];
+  const jobs={};
+  if(c?.gp){ jobs.gp = isSol ? getJSON('https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses='+tok.addr)
+                             : getJSON(`https://api.gopluslabs.io/api/v1/token_security/${c.gp}?contract_addresses=${tok.addr}`); }
+  if(c?.hp) jobs.hp=getJSON(`https://api.honeypot.is/v2/IsHoneypot?address=${tok.addr}&chainID=${c.hp}`);
+  if(isSol) jobs.rc=getJSON(`https://api.rugcheck.xyz/v1/tokens/${tok.addr}/report/summary`);
+  const res={}, failed=[];
+  await Promise.all(Object.entries(jobs).map(async([k,p])=>{try{res[k]=await p}catch(e){failed.push(k)}}));
+  let gp=null; if(res.gp?.result){ const vals=Object.values(res.gp.result); gp=vals[0]||null; if(gp && Object.keys(gp).length<3) gp=null; }
+  const R=score(tok,gp,res.hp,res.rc,isSol,failed,!!c?.gp);
+  status('');
+  render(tok,R,gp,opts);
+  $('#go').disabled=false;
+  try{ if(!opts.example) history.replaceState(null,'','?q='+encodeURIComponent(tok.addr)); }catch(e){}
+}
+
+function score(tok,gp,hp,rc,isSol,failed,supported){
+  const F=[]; const G=[];
+  const add=(sev,t,d)=>F.push({sev,t,d}); const good=(t,d,pts)=>G.push({t,d,pts});
+  const main=tok.pairs.slice().sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0))[0];
+  const liq=tok.liq, ageMs=tok.created<Infinity?Date.now()-tok.created:null, ageH=ageMs!=null?ageMs/36e5:null;
+  const holders=gp?+(gp.holder_count||0):null;
+  const onCex=gp?.is_in_cex?.listed==='1'; const cexList=gp?.is_in_cex?.cex_list||[];
+  const big = onCex || liq>5e6;   // established: lowers severity of admin switches
+
+  /* market */
+  if(!tok.pairs.length) add('high','No trading activity found','We couldn\'t find this token trading on any decentralized exchange. It may be fake, dead, or not launched yet. Double-check the address.');
+  else{
+    if(liq<5000) add('high','Almost no liquidity',`Only ${fmtUsd(liq)} is in the trading pool. Even small sells will crash the price, and you may not be able to get your money out.`);
+    else if(liq<50000) add('medium','Thin liquidity',`${fmtUsd(liq)} in liquidity is small. Big buys and sells move the price a lot, which makes it easy to pump and dump.`);
+    if(ageH!=null){
+      if(ageH<24) add('high','Brand new, under 24 hours old',`This coin started trading ${fmtAge(tok.created)} ago. Most rug pulls happen in a coin's first hours and days.`);
+      else if(ageH<24*7) add('medium','Less than a week old',`Trading started ${fmtAge(tok.created)} ago. New coins carry much higher rug-pull risk until they've survived a while.`);
+      else if(ageH<24*30) add('low','Less than a month old',`Trading started ${fmtAge(tok.created)} ago.`);
+    }
+    const ch=main?.priceChange?.h24; if(ch!=null && ch<-60) add('medium','Price crashed in the last 24 hours',`Down ${Math.abs(ch).toFixed(0)}% today. That's a common sign of insiders dumping or a rug pull in progress.`);
+    const tx=main?.txns?.h24; if(tx && tx.sells>30 && tx.sells>tx.buys*3) add('low','Heavy selling',`${fmtNum(tx.sells)} sells vs ${fmtNum(tx.buys)} buys in 24 hours.`);
+    const info=main?.info; if(!info || (!(info.websites||[]).length && !(info.socials||[]).length)) add('medium','No website or socials listed','Legit projects almost always list a website, X/Twitter or Telegram. Anonymous coins with nothing are higher risk.');
+    const fdv=main?.fdv||main?.marketCap; if(fdv>1e6 && liq>0 && fdv/liq>150 && !big) add('low','Valuation is huge compared to liquidity',`Valued at ${fmtUsd(fdv)} but only ${fmtUsd(liq)} is actually tradeable. That price is easy to fake and hard to cash out of.`);
+  }
+
+  /* security */
+  if(!supported) add('low','Contract security not checked',`We can't run contract checks on ${chainName(tok.chain)} yet, so this score is based on market data only.`);
+  else if(!gp) add('medium','Security scan unavailable','The contract security scan returned no data for this token. That can happen with very new or unusual tokens. Treat it as unverified.');
+
+  if(gp && !isSol){
+    const owner=(gp.owner_address||'').toLowerCase(); const ownerActive=owner && !DEAD.includes(owner);
+    if(gp.is_honeypot==='1') add('critical','Honeypot: you can buy but not sell','The contract blocks selling. Anyone who buys is trapped. This is the classic crypto scam.');
+    if(gp.cannot_sell_all==='1') add('critical','You can\'t sell your whole balance','The contract stops holders from selling everything they own.');
+    if(gp.honeypot_with_same_creator==='1') add('critical','Creator has made honeypots before','The wallet that created this coin also created at least one known honeypot scam.');
+    if(gp.owner_change_balance==='1') add('critical','Owner can change wallet balances','The owner can edit how many tokens anyone holds, including yours, down to zero.');
+    if(gp.hidden_owner==='1') add('high','Hidden owner','The contract has a secret owner who keeps control even if ownership looks given up.');
+    if(gp.can_take_back_ownership==='1') add('high','Owner can take back control','Ownership can be reclaimed after being "renounced", so a renounce is meaningless here.');
+    if(gp.selfdestruct==='1') add('high','Contract can self-destruct','The contract can be deleted, which would wipe out the token.');
+    if(gp.cannot_buy==='1') add('high','Buying is blocked','The contract currently stops people from buying.');
+    if(gp.personal_slippage_modifiable==='1') add('high','Owner can set a custom tax for any wallet','The owner can give specific wallets, like yours, a huge sell tax.');
+    const bt=+gp.buy_tax||0, st=+gp.sell_tax||0;
+    if(st>=0.5) add('critical',`Sell tax of ${pct(st)}`,'Selling takes most of your money. It\'s effectively a honeypot.');
+    else if(st>0.1||bt>0.1) add('high',`High taxes: buy ${pct(bt)}, sell ${pct(st)}`,'Every trade loses a big cut to the contract. That\'s hard to profit from and often used to drain buyers.');
+    else if(st>0.05||bt>0.05) add('medium',`Taxes: buy ${pct(bt)}, sell ${pct(st)}`,'Moderate trading taxes eat into every trade.');
+    else if(st>0||bt>0) add('low',`Small taxes: buy ${pct(bt)}, sell ${pct(st)}`,'Low trading taxes.');
+    if(gp.slippage_modifiable==='1') add(ownerActive?'high':'low','Taxes can be changed',ownerActive?'The owner can raise the buy or sell tax at any time, even up to 100%, trapping holders.':'Tax switch exists, but ownership looks renounced.');
+    if(gp.is_mintable==='1') add(ownerActive&&!big?'high':'low','More coins can be minted',ownerActive?'The owner can print new tokens whenever they want and dump them, diluting everyone else.':'A mint function exists but ownership looks renounced.');
+    if(gp.is_open_source==='0') add('high','Contract code is hidden','The code isn\'t published, so nobody can check what it really does. Legit projects publish their code.');
+    if(gp.is_proxy==='1') add(big?'low':'medium','Contract can be upgraded','It\'s a proxy contract, so the team can swap in new code later, including malicious code.');
+    if(gp.transfer_pausable==='1') add(ownerActive&&!big?'medium':'low','Trading can be paused','The owner can freeze all transfers, which would stop everyone from selling.');
+    if(gp.is_blacklisted==='1') add(ownerActive&&!big?'medium':'low','Owner can blacklist wallets','Specific wallets can be blocked from trading.');
+    if(gp.trading_cooldown==='1') add('low','Trading cooldown','There\'s a forced wait between trades.');
+    if(gp.anti_whale_modifiable==='1') add('low','Max-buy limits can be changed','The owner can change how much one wallet can buy or hold.');
+    if(gp.external_call==='1') add('low','Calls other contracts','The contract depends on outside code, which adds risk.');
+    if(!ownerActive) good('Ownership renounced','No one controls the contract\'s admin switches.',4);
+    if(gp.is_open_source==='1' && !(bt>0||st>0)) good('Open source, no taxes','The code is public and trades aren\'t taxed.',3);
+    // creator / holders
+    const cp=+gp.creator_percent||0; if(cp>0.25) add('high',`Creator holds ${pct(cp)}`,'The wallet that launched the coin still holds a huge share and could dump it.'); else if(cp>0.1) add('medium',`Creator holds ${pct(cp)}`,'The creator still has a large bag.');
+    const lpAddrs=new Set(tok.pairs.map(p=>p.pairAddress?.toLowerCase())); (gp.dex||[]).forEach(d=>d.pair&&lpAddrs.add(d.pair.toLowerCase()));
+    holderFlags((gp.holders||[]).filter(h=>!lpAddrs.has((h.address||'').toLowerCase()) && !DEAD.includes((h.address||'').toLowerCase()) && h.is_locked!==1 && !/lock|burn|null|dead/i.test(h.tag||'')).map(h=>+h.percent||0),add,big);
+    // LP lock
+    if(gp.lp_holders?.length && !big){
+      let locked=0; gp.lp_holders.forEach(h=>{const a=(h.address||'').toLowerCase(); if(h.is_locked===1||DEAD.includes(a)||/lock|burn/i.test(h.tag||'')) locked+=+h.percent||0;});
+      if(locked<0.5) add(liq<1e6?'high':'medium',`Only ${pct(locked)} of liquidity is locked`,'The team could pull the trading pool at any time. That\'s a "rug pull", and the coin goes to zero instantly.');
+      else if(locked>0.9) good('Liquidity locked',`${pct(locked)} of the trading pool is locked or burned, so it can't be pulled.`,5);
+    }
+  }
+  if(gp && isSol){
+    const st=k=>gp[k]?.status==='1';
+    if(gp.non_transferable==='1') add('critical','Token can\'t be transferred','The token is set to be non-transferable, so you can\'t sell it.');
+    if(st('balance_mutable_authority')) add('critical','Someone can change balances','An authority can edit token balances, including yours.');
+    if(st('freezable')) add('high','Creator can freeze your tokens','A freeze authority is still active. They can lock your tokens so you can\'t sell, a common Solana honeypot trick.');
+    if(st('mintable')) add(big?'low':'high','Creator can mint more tokens','Mint authority is still active, so new tokens can be printed and dumped on holders.');
+    if((gp.transfer_hook||[]).length) add('high','Custom transfer code','The token runs extra code on every transfer, which can be used to block or tax sells.');
+    if(st('transfer_fee_upgradable')) add('medium','Transfer fee can be changed','The team can add or raise a fee on every transfer later.');
+    if(st('closable')) add('medium','Token accounts can be closed','An authority can close token accounts.');
+    if(st('metadata_mutable')) add('low','Name and logo can be changed','The token\'s metadata isn\'t locked. It\'s common, but it\'s used by copycats to swap identities.');
+    if(!st('mintable')&&!st('freezable')) good('Mint & freeze authority revoked','Nobody can print more tokens or freeze wallets.',5);
+    const pool=new Set(tok.pairs.map(p=>p.pairAddress)); (gp.dex||[]).forEach(d=>d.id&&pool.add(d.id));
+    holderFlags((gp.holders||[]).filter(h=>!pool.has(h.account)&&!pool.has(h.token_account)&&h.is_locked!==1&&!/raydium|orca|meteora|pump|pool|lock|burn/i.test(h.tag||'')).map(h=>+h.percent||0),add,big);
+  }
+  if(rc){
+    (rc.risks||[]).forEach(r=>{ if(/mutable metadata|freeze authority|mint authority/i.test(r.name)) return;
+      if(r.level==='danger') add('high',r.name,r.description||'Flagged as dangerous by RugCheck.'); });
+    if(rc.lpLockedPct!=null && !big){ if(rc.lpLockedPct<50) add(liq<1e6?'high':'medium',`Only ${rc.lpLockedPct.toFixed(0)}% of liquidity is locked`,'The pool can be pulled. That\'s a rug pull, and the price goes to zero.'); else if(rc.lpLockedPct>90) good('Liquidity locked',`${rc.lpLockedPct.toFixed(0)}% of liquidity is locked or burned.`,5); }
+  }
+  if(hp){
+    if(hp.honeypotResult?.isHoneypot && !F.some(f=>/Honeypot/.test(f.t))) add('critical','Honeypot (failed sell test)',hp.honeypotResult.honeypotReason||'A simulated sell failed. Buyers likely can\'t sell.');
+    const ss=hp.simulationResult?.sellTax; if(ss>=50 && !F.some(f=>/Sell tax/.test(f.t))) add('critical',`Simulated sell tax ${ss.toFixed(0)}%`,'A test sale lost most of its value to taxes.');
+    if(hp.simulationSuccess===false && !hp.honeypotResult) add('medium','Sell simulation failed','We couldn\'t simulate a buy and sell, which sometimes means trading is restricted.');
+    if(hp.summary?.risk==='honeypot'||hp.summary?.riskLevel>=90) { if(!F.some(f=>f.sev==='critical')) add('critical','Flagged as a honeypot','Honeypot.is rates this token as a honeypot.'); }
+  }
+  if(failed.length) add('low','Some checks didn\'t respond',`${failed.map(k=>({gp:'GoPlus',hp:'Honeypot.is',rc:'RugCheck'}[k])).join(', ')} didn't answer in time, so this report may be incomplete.`);
+
+  /* good signs */
+  if(onCex) good('Listed on major exchanges',`Trades on ${cexList.slice(0,4).join(', ')||'centralized exchanges'}, which do their own vetting.`,25);
+  if(liq>1e6) good('Deep liquidity',`${fmtUsd(liq)} in trading pools.`,10);
+  if(ageH!=null && ageH>24*365) good('Has been trading over a year',`First pool created ${fmtAge(tok.created)} ago.`,10);
+  if(holders>10000) good('Lots of holders',`${fmtNum(holders)} wallets hold it.`,6);
+  else if(holders!=null && holders<100 && tok.pairs.length) add('medium',`Only ${fmtNum(holders)} holders`,'Very few wallets hold this coin, so a handful of people control the price.');
+
+  const W={critical:45,high:20,medium:9,low:3};
+  let s=F.reduce((a,f)=>a+W[f.sev],0) - G.reduce((a,g)=>a+g.pts,0);
+  s=Math.max(0,Math.min(100,Math.round(s)));
+  if(F.some(f=>f.sev==='critical')) s=Math.max(s,88);
+  const order={critical:0,high:1,medium:2,low:3}; F.sort((a,b)=>order[a.sev]-order[b.sev]);
+  let v; if(s>=75)v={k:'Danger',c:'var(--r)'}; else if(s>=50)v={k:'High risk',c:'var(--o)'}; else if(s>=25)v={k:'Caution',c:'var(--y)'}; else v={k:'Lower risk',c:'var(--g)'};
+  return {F,G,s,v,main,liq,holders,onCex,ageMs};
+}
+function holderFlags(pcts,add,big){
+  pcts=pcts.sort((a,b)=>b-a); if(!pcts.length) return;
+  const top=pcts[0], top10=pcts.slice(0,10).reduce((a,b)=>a+b,0);
+  if(top>0.2) add(big?'medium':'high',`One wallet holds ${pct(top)}`,'A single wallet (not the trading pool) owns a huge share. If it sells, the price collapses.');
+  else if(top>0.1) add(big?'low':'medium',`Largest wallet holds ${pct(top)}`,'One holder has a big enough bag to move the price on their own.');
+  if(top10>0.5) add(big?'medium':'high',`Top 10 wallets hold ${pct(top10)}`,'Ownership is concentrated in a few wallets, which is classic setup for a coordinated dump.');
+  else if(top10>0.3) add('low',`Top 10 wallets hold ${pct(top10)}`,'Fairly concentrated ownership.');
+}
+
+/* ---------- render ---------- */
+function dial(s,color){
+  const a=Math.PI*(1-s/100), x=100+80*Math.cos(a), y=100-80*Math.sin(a);
+  return `<svg viewBox="0 0 200 120" aria-hidden="true"><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="#20302a" stroke-width="16" stroke-linecap="round"/>`+
+   (s>0?`<path d="M20 100 A80 80 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}" fill="none" stroke="${color}" stroke-width="16" stroke-linecap="round"/>`:'')+`</svg>`;
+}
+function render(tok,R,gp,opts){
+  const m=R.main||{}; const ch=m.priceChange?.h24;
+  const summary = R.F.filter(f=>f.sev==='critical'||f.sev==='high').length
+     ? `${R.F.filter(f=>f.sev==='critical'||f.sev==='high').length} serious red flag${R.F.filter(f=>f.sev==='critical'||f.sev==='high').length>1?'s':''}. Top issue: ${R.F[0].t.toLowerCase()}.`
+     : R.F.length ? `No serious red flags. ${R.F.length} minor thing${R.F.length>1?'s':''} to know about.` : 'No red flags found in our checks.';
+  const ex=CHAIN[tok.chain]?.ex;
+  const stats=[
+    ['Price',fmtUsd(m.priceUsd)],['24h change',ch!=null?(ch>0?'+':'')+ch.toFixed(1)+'%':'—',ch>0?'up':ch<0?'dn':''],['Market cap',fmtUsd(m.marketCap||m.fdv)],
+    ['Liquidity',fmtUsd(R.liq)],['Age',R.ageMs?fmtAge(Date.now()-R.ageMs):'—'],['Holders',fmtNum(R.holders)],
+    ['24h volume',fmtUsd(m.volume?.h24)],['24h buys / sells',m.txns?.h24?fmtNum(m.txns.h24.buys)+' / '+fmtNum(m.txns.h24.sells):'—'],['Chain',chainName(tok.chain)]];
+  const flagHTML=f=>`<div class="flag"><span class="sev ${f.sev}">${f.sev}</span><div><div class="t">${esc(f.t)}</div><div class="d">${esc(f.d)}</div></div></div>`;
+  $('#report').innerHTML=`${opts.example?'<div class="ex">EXAMPLE REPORT</div>':''}
+  <div class="top">
+    <div class="card dialbox">
+      <div class="tok">${esc(tok.name)} <span style="color:var(--mut)">$${esc(tok.symbol)}</span><small>${esc(tok.addr)}</small></div>
+      <div class="dial">${dial(R.s,R.v.c)}<div class="num" style="color:${R.v.c}">${R.s}<small>/100</small></div></div>
+      <div class="verdict" style="color:${R.v.c}">${R.v.k}</div>
+      <div class="sumline">${esc(summary)}</div>
+    </div>
+    <div class="card" style="padding:0;background:transparent;border:0">
+      <div class="stats">${stats.map(s=>`<div class="stat"><div class="k">${s[0]}</div><div class="v ${s[2]||''}">${s[1]}</div></div>`).join('')}</div>
+      <div class="links">
+        ${m.url?`<a class="ghost" href="${esc(m.url)}" target="_blank" rel="noopener">Chart on DexScreener ↗</a>`:''}
+        ${ex?`<a class="ghost" href="${ex+esc(tok.addr)}" target="_blank" rel="noopener">Block explorer ↗</a>`:''}
+        <button class="ghost" id="share" type="button">Copy report link</button>
+      </div>
+    </div>
+  </div>
+  <h2>Red flags <span class="cnt">${R.F.length}</span></h2>
+  <div class="flags">${R.F.length?R.F.map(flagHTML).join(''):'<div class="none">Nothing flagged. That lowers the risk but doesn\'t make it safe: anonymous teams can still abandon a project.</div>'}</div>
+  ${R.G.length?`<h2>Good signs <span class="cnt">${R.G.length}</span></h2><div class="flags">${R.G.map(g=>`<div class="flag"><span class="sev good">good</span><div><div class="t">${esc(g.t)}</div><div class="d">${esc(g.d)}</div></div></div>`).join('')}</div>`:''}
+  <div class="checked"><b>Checked</b> ${new Date().toLocaleString()} · market data: DexScreener${gp?' · contract scan: GoPlus Security':''}${CHAIN[tok.chain]?.hp?' · sell simulation: Honeypot.is':''}${tok.chain==='solana'?' · RugCheck':''}<br>Risk score: 0 = no flags found, 100 = almost certainly a scam. Not financial advice.</div>`;
+  $('#share').onclick=async()=>{const u=location.origin+location.pathname+'?q='+encodeURIComponent(tok.addr); try{await navigator.clipboard.writeText(u); $('#share').textContent='Link copied';}catch(e){$('#share').textContent=u;}};
+  if(!opts.example) $('#report').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ---------- wiring ---------- */
+$('#f').addEventListener('submit',e=>{e.preventDefault(); run($('#q').value);});
+document.querySelectorAll('.chip[data-q]').forEach(b=>b.onclick=()=>{$('#q').value=b.textContent; run(b.dataset.q,{autoPick:true});});
+$('#rand').onclick=async()=>{
+  try{status('Picking a brand-new coin…'); const j=await getJSON('https://api.dexscreener.com/token-profiles/latest/v1');
+    const list=(Array.isArray(j)?j:[]).filter(t=>CHAIN[t.chainId]); const t=list[Math.floor(Math.random()*Math.min(list.length,30))];
+    if(!t){status('Couldn\'t find a new coin right now. Try again.',true);return;} $('#q').value=t.tokenAddress; run(t.tokenAddress);
+  }catch(e){status('Couldn\'t load new coins ('+e.message+').',true);}
+};
+const qs=new URLSearchParams(location.search).get('q');
+if(qs){$('#q').value=qs; run(qs);} else run('0x6982508145454Ce325dDbE47a25d4ec3d2311933',{example:true,keepReport:true});
+</script>
+</body>
+</html>
