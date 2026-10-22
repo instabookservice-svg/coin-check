@@ -184,7 +184,7 @@ async function run(raw,opts={}){
       status('Searching for "'+inp.q+'"…');
       const j=await getJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(inp.q));
       const qq=inp.q.toLowerCase();
-      const pairs=(j.pairs||[]).filter(p=>p.baseToken && (p.baseToken.symbol.toLowerCase()===qq||p.baseToken.name.toLowerCase().includes(qq)));
+      const pairs=(j.pairs||[]).filter(p=>p.baseToken && (p.baseToken.symbol.toLowerCase().replace(/^\$/,'')===qq||p.baseToken.name.toLowerCase().includes(qq)));
       groups=groupTokens(pairs.length?pairs:(j.pairs||[]));
       if(!groups.length){status('No coins found for "'+inp.q+'". Try pasting the contract address instead.',true);return;}
       if(groups.length>1 && !opts.autoPick){status('');showPicker(groups,inp.q);return;}
@@ -295,7 +295,7 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
     const lpAddrs=new Set(tok.pairs.map(p=>p.pairAddress?.toLowerCase())); (gp.dex||[]).forEach(d=>d.pair&&lpAddrs.add(d.pair.toLowerCase()));
     holderFlags((gp.holders||[]).filter(h=>!lpAddrs.has((h.address||'').toLowerCase()) && !DEAD.includes((h.address||'').toLowerCase()) && h.is_locked!==1 && !/lock|burn|null|dead/i.test(h.tag||'')).map(h=>+h.percent||0),add,big);
     // LP lock
-    if(gp.lp_holders?.length && !big){
+    if(gp.lp_holders?.length && !big && !(ageH>24*180)){
       let locked=0; gp.lp_holders.forEach(h=>{const a=(h.address||'').toLowerCase(); if(h.is_locked===1||DEAD.includes(a)||/lock|burn/i.test(h.tag||'')) locked+=+h.percent||0;});
       if(locked<0.5) add(liq<1e6?'high':'medium',`Only ${pct(locked)} of liquidity is locked`,'The team could pull the trading pool at any time. That\'s a "rug pull", and the coin goes to zero instantly.');
       else if(locked>0.9) good('Liquidity locked',`${pct(locked)} of the trading pool is locked or burned, so it can't be pulled.`,5);
@@ -318,7 +318,7 @@ function score(tok,gp,hp,rc,isSol,failed,supported){
   if(rc){
     (rc.risks||[]).forEach(r=>{ if(/mutable metadata|freeze authority|mint authority/i.test(r.name)) return;
       if(r.level==='danger') add('high',r.name,r.description||'Flagged as dangerous by RugCheck.'); });
-    if(rc.lpLockedPct!=null && !big){ if(rc.lpLockedPct<50) add(liq<1e6?'high':'medium',`Only ${rc.lpLockedPct.toFixed(0)}% of liquidity is locked`,'The pool can be pulled. That\'s a rug pull, and the price goes to zero.'); else if(rc.lpLockedPct>90) good('Liquidity locked',`${rc.lpLockedPct.toFixed(0)}% of liquidity is locked or burned.`,5); }
+    if(rc.lpLockedPct!=null && !big && !(ageH>24*180)){ if(rc.lpLockedPct<50) add(liq<1e6?'high':'medium',`Only ${rc.lpLockedPct.toFixed(0)}% of liquidity is locked`,'The pool can be pulled. That\'s a rug pull, and the price goes to zero.'); else if(rc.lpLockedPct>90) good('Liquidity locked',`${rc.lpLockedPct.toFixed(0)}% of liquidity is locked or burned.`,5); }
   }
   if(hp){
     if(hp.honeypotResult?.isHoneypot && !F.some(f=>/Honeypot/.test(f.t))) add('critical','Honeypot (failed sell test)',hp.honeypotResult.honeypotReason||'A simulated sell failed. Buyers likely can\'t sell.');
